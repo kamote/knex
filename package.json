@@ -75,6 +75,7 @@
     "lint": "eslint src/**",
     "plaintest": "mocha -t 10000 -b -R spec test/index.js && npm run tape",
     "prepublish": "npm run babel",
+    "postinstall": "npm run babel",
     "pre_test": "npm run lint",
     "tape": "node test/tape/index.js | tap-spec",
     "debug_tape": "node-debug test/tape/index.js",
@@ -82,7 +83,7 @@
     "oracledb:test": "docker rmi -f --no-prune knex-test-oracledb && docker build -f scripts/oracle-tests-Dockerfile --tag knex-test-oracledb . && docker run -i -t knex-test-oracledb",
     "mssql:init": "docker-compose -f scripts/mssql-docker-compose.yml up --no-start && docker-compose -f scripts/mssql-docker-compose.yml start",
     "mssql:test": "DB=mssql npm test",
-    "mssql:destroy": "docker-compose -f scripts/mssql-docker-compose.yml stop",    
+    "mssql:destroy": "docker-compose -f scripts/mssql-docker-compose.yml stop",
     "stress:init": "docker-compose -f scripts/stress-test/docker-compose.yml up --no-start && docker-compose -f scripts/stress-test/docker-compose.yml start",
     "stress:test": "node scripts/stress-test/knex-stress-test.js |  grep -A 3 -- '- STATS '",
     "stress:destroy": "docker-compose -f scripts/stress-test/docker-compose.yml stop"
