@@ -203,6 +203,36 @@ module.exports = function(knex) {
         .to.not.throw(TypeError);
       });
 
+      it('allows to set primary key as optional on increments and bigIncrements', function() {
+        return knex.schema
+          .createTable('test_table_increments', function(table) {
+            table.increments('id', { primaryKey: false });
+            table.bigIncrements('big_id', { primaryKey: false });
+            table.integer('sample_id1');
+            table.integer('sample_id2');
+            table.primary(['sample_id1', 'sample_id2']);
+          }).testSql(function(tester) {
+            tester('mysql', ['create table `test_table_increments` (`id` int unsigned not null auto_increment, `big_id` bigint unsigned not null auto_increment, `sample_id1` int, `sample_id2` int)']);
+            tester('redshift', ['create table "test_table_one" FOOBAR']);
+            tester('pg', ['create table "test_table_one" ("id" bigserial primary key, "first_name" varchar(255), "last_name" varchar(255), "email" varchar(255) null, "logins" integer default \'1\', "about" text, "created_at" timestamptz, "updated_at" timestamptz)','comment on table "test_table_one" is \'A table comment.\'',"comment on column \"test_table_one\".\"logins\" is NULL",'comment on column "test_table_one"."about" is \'A comment.\'','create index "test_table_one_first_name_index" on "test_table_one" ("first_name")','alter table "test_table_one" add constraint "test_table_one_email_unique" unique ("email")','create index "test_table_one_logins_index" on "test_table_one" ("logins")']);
+            tester('pg-redshift', ['create table "test_table_one" ("id" bigint identity(1,1) primary key not null, "first_name" varchar(255), "last_name" varchar(255), "email" varchar(255) null, "logins" integer default \'1\', "about" varchar(max), "created_at" timestamptz, "updated_at" timestamptz)','comment on table "test_table_one" is \'A table comment.\'',"comment on column \"test_table_one\".\"logins\" is NULL",'comment on column "test_table_one"."about" is \'A comment.\'','alter table "test_table_one" add constraint "test_table_one_email_unique" unique ("email")']);
+            tester('sqlite3', ['create table `test_table_one` (`id` integer not null primary key autoincrement, `first_name` varchar(255), `last_name` varchar(255), `email` varchar(255) null, `logins` integer default \'1\', `about` text, `created_at` datetime, `updated_at` datetime)','create index `test_table_one_first_name_index` on `test_table_one` (`first_name`)','create unique index `test_table_one_email_unique` on `test_table_one` (`email`)','create index `test_table_one_logins_index` on `test_table_one` (`logins`)']);
+            tester('oracle', [
+              'create table "test_table_one" ("id" number(20, 0) not null primary key, "first_name" varchar2(255), "last_name" varchar2(255), "email" varchar2(255) null, "logins" integer default \'1\', "about" varchar2(4000), "created_at" timestamp with time zone, "updated_at" timestamp with time zone)',
+              'comment on table "test_table_one" is \'A table comment.\'',
+              "begin execute immediate 'create sequence \"test_table_one_seq\"'; exception when others then if sqlcode != -955 then raise; end if; end;",
+              "create or replace trigger \"test_table_one_id_trg\" before insert on \"test_table_one\" for each row when (new.\"id\" is null)  begin select \"test_table_one_seq\".nextval into :new.\"id\" from dual; end;",
+              "comment on column \"test_table_one\".\"logins\" is \'\'",
+              'comment on column "test_table_one"."about" is \'A comment.\'',
+              'create index "NkZo/dGRI9O73/NE2fHo+35d4jk" on "test_table_one" ("first_name")',
+              'alter table "test_table_one" add constraint "test_table_one_email_unique" unique ("email")',
+              'create index "test_table_one_logins_index" on "test_table_one" ("logins")']);
+            tester('mssql', ['CREATE TABLE [test_table_one] ([id] bigint identity(1,1) not null primary key, [first_name] nvarchar(255), [last_name] nvarchar(255), [email] nvarchar(255) null, [logins] int default \'1\', [about] nvarchar(max), [created_at] datetime, [updated_at] datetime, CONSTRAINT [test_table_one_email_unique] UNIQUE ([email]))',
+              'CREATE INDEX [test_table_one_first_name_index] ON [test_table_one] ([first_name])',
+              'CREATE INDEX [test_table_one_logins_index] ON [test_table_one] ([logins])']);
+          });
+      });
+
       it('is possible to chain .catch', function() {
         return knex.schema
           .createTable('catch_test', function(t) {
