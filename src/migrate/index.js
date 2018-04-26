@@ -23,6 +23,8 @@ const CONFIG_DEFAULT = Object.freeze({
     '.co', '.coffee', '.eg', '.iced', '.js', '.litcoffee', '.ls', '.ts'
   ],
   tableName: 'knex_migrations',
+  lockTableName: null,
+  columnName: 'name',
   schemaName: null,
   directory: './migrations',
   disableTransactions: false
@@ -73,7 +75,7 @@ export default class Migrator {
         .tap(validateMigrationList)
         .then((val) => this._getLastBatch(val))
         .then((migrations) => {
-          return this._runBatch(map(migrations, 'name'), 'down');
+          return this._runBatch(map(migrations, this.config.columnName), 'down');
         });
     })
   }
@@ -171,7 +173,9 @@ export default class Migrator {
   }
 
   _getLockTableName() {
-    return this.config.tableName + '_lock';
+    return this.config.lockTableName 
+      ? this.config.lockTableName 
+      : this.config.tableName + '_lock';
   }
 
   _getLockTableNameWithSchema() {
@@ -277,7 +281,7 @@ export default class Migrator {
     const { tableName, schemaName } = this.config;
     return this._ensureTable(trx)
       .then(() => trx.from(getTableName(tableName, schemaName)).orderBy('id').select('name'))
-      .then((migrations) => map(migrations, 'name'))
+      .then((migrations) => map(migrations, this.config.columnName))
   }
 
   // Gets the migration list from the specified migration directory, as well as
