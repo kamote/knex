@@ -14,6 +14,7 @@ inherits(SchemaCompiler_Oracle, SchemaCompiler);
 SchemaCompiler_Oracle.prototype.renameTable = function(tableName, to) {
   const renameTable = Trigger.renameTableAndAutoIncrementTrigger(
     this.client.logger,
+    this.formatter,
     tableName,
     to
   );
