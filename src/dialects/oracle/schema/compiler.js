@@ -13,7 +13,7 @@ inherits(SchemaCompiler_Oracle, SchemaCompiler);
 
 // Rename a table on the schema.
 SchemaCompiler_Oracle.prototype.renameTable = function(tableName, to) {
-  const renameTable = Trigger.renameTableAndAutoIncrementTrigger(tableName, to);
+  const renameTable = Trigger.renameTableAndAutoIncrementTrigger(tableName, to, this.formatter);
   this.pushQuery(renameTable);
 };
 

@@ -43,7 +43,7 @@ assign(TableCompiler_Oracle.prototype, {
   renameColumn(from, to) {
     // Remove quotes around tableName
     const tableName = this.tableName().slice(1, -1)
-    return this.pushQuery(Trigger.renameColumnTrigger(tableName, from, to));
+    return this.pushQuery(Trigger.renameColumnTrigger(tableName, from, to, this.formatter));
   },
 
   compileAdd(builder) {
