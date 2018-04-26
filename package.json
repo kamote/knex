@@ -4,6 +4,12 @@
   "description": "A batteries-included SQL query & schema builder for Postgres, MySQL and SQLite3 and the Browser",
   "main": "knex.js",
   "dependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-eslint": "^8.2.2",
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-plugin-lodash": "3.3.2",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-preset-env": "^1.6.1",
     "babel-runtime": "^6.26.0",
     "bluebird": "^3.5.1",
     "chalk": "2.3.2",
@@ -17,6 +23,7 @@
     "mkdirp": "^0.5.1",
     "pg-connection-string": "2.0.0",
     "readable-stream": "2.3.6",
+    "rimraf": "^2.6.2",
     "safe-buffer": "^5.1.1",
     "tarn": "^1.1.4",
     "tildify": "1.2.0",
@@ -75,6 +82,7 @@
     "lint": "eslint src/**",
     "plaintest": "mocha -t 10000 -b -R spec test/index.js && npm run tape",
     "prepublish": "npm run babel",
+    "postinstall": "npm run babel",
     "pre_test": "npm run lint",
     "tape": "node test/tape/index.js | tap-spec",
     "debug_tape": "node-debug test/tape/index.js",
@@ -136,7 +144,9 @@
     "knex.js",
     "LICENSE",
     "CHANGELOG.md",
-    "scripts/*"
+    "scripts/*",
+    ".babelconfig.js",
+    ".babelrc"
   ],
   "license": "MIT",
   "tonicExampleFilename": "scripts/runkit-example.js"
