@@ -30,10 +30,7 @@ assign(ColumnCompiler_MSSQL.prototype, {
     return `float`;
   },
 
-  integer(length) {
-    length = length ? `(${this._num(length, 11)})` : '';
-    return `int${length}`;
-  },
+  integer: 'int',
 
   mediumint: 'int',
 
