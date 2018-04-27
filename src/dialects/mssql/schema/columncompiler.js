@@ -43,7 +43,10 @@ assign(ColumnCompiler_MSSQL.prototype, {
     return `decimal(${this._num(precision, 8)}, ${this._num(scale, 2)})`
   },
 
-  integer: 'int',
+  integer(length) {
+    // ignore length
+    return `int`;
+  },
 
   mediumint: 'int',
 
