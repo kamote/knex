@@ -3818,6 +3818,27 @@ describe("QueryBuilder", function() {
     });
   });
 
+  it("insert with primarykey/identitykey is set", function() {
+    testsql(qb().into('users').insert({id: 1, 'email': 'foo'}), {
+      mysql: {
+        sql: 'insert into `users` (`email`) values (?)',
+        bindings: [1, 'foo']
+      },
+      mssql: {
+        sql: 'SET IDENTITY_INSERT [users] ON; insert into [users] ([email]) values (?); SET IDENTITY_INSERT [users] OFF;',
+        bindings: [1, 'foo']
+      },
+      postgres: {
+        sql: 'insert into "users" ("email") values (?)',
+        bindings: ['1', 'foo']
+      },
+      redshift: {
+        sql: 'insert into "users" ("email") values (?)',
+        bindings: [1, 'foo']
+      },
+    });
+  });
+
   // it("insert with array with null value and returning is a noop", function() {
   //   testsql(qb().into('users').insert([null], 'id'), {
   //     mysql: {
