@@ -14,7 +14,11 @@ inherits(ColumnCompiler_Redshift, ColumnCompiler_PG);
 assign(ColumnCompiler_Redshift.prototype, {
   // Types:
   // ------
-  bigincrements: 'bigint identity(1,1) primary key not null',
+  bigincrements({ primaryKey = true } = {}) {
+    return primaryKey
+      ? 'bigint identity(1,1) primary key not null'
+      : 'bigint identity(1,1) not null';
+  },
   binary: 'varchar(max)',
   bit(column) {
     return column.length !== false ? `char(${column.length})` : 'char(1)';
@@ -22,7 +26,11 @@ assign(ColumnCompiler_Redshift.prototype, {
   blob: 'varchar(max)',
   enu: 'varchar(255)',
   enum: 'varchar(255)',
-  increments: 'integer identity(1,1) primary key not null',
+  increments({ primaryKey = true } = {}) {
+    return primaryKey
+      ? 'integer identity(1,1) primary key not null'
+      : 'integer identity(1,1) not null';
+  },
   json: 'varchar(max)',
   jsonb: 'varchar(max)',
   longblob: 'varchar(max)',
