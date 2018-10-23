@@ -315,7 +315,7 @@ module.exports = function(knex) {
             if (knex.client.driverName === 'mssql') {
               expect(count).to.equal(3);
             } else if (knex.client.driverName === 'oracledb') {
-              expect(count).to.equal(4);
+              expect(count).to.equal(3);
             } else {
               expect(count).to.equal(5);
             }

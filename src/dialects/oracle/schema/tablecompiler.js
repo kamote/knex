@@ -40,6 +40,14 @@ assign(TableCompiler_Oracle.prototype, {
 
   // Compile a rename column command.
   renameColumn(from, to) {
+    if (utils.supportsIdentityColumn(this.client)) {
+      const fromWrapped = this.formatter.wrap(from);
+      const toWrapperd = this.formatter.wrap(to);
+      return this.pushQuery(
+        `alter table ${this.tableName()} rename column ${fromWrapped} to ${toWrapperd}`
+      );
+    }
+
     // Remove quotes around tableName
     const tableName = this.tableName().slice(1, -1);
     return this.pushQuery(

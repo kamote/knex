@@ -39,4 +39,13 @@ ReturningHelper.prototype.toString = function() {
   return `[object ReturningHelper:${this.columnName}]`;
 };
 
-export { generateCombinedName, wrapSqlWithCatch, ReturningHelper };
+function supportsIdentityColumn(client) {
+  return client.version && parseFloat(client.version) > 12.1;
+}
+
+export {
+  generateCombinedName,
+  wrapSqlWithCatch,
+  ReturningHelper,
+  supportsIdentityColumn,
+};

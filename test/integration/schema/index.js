@@ -24,7 +24,6 @@ module.exports = function(knex) {
               );
               tester('oracledb', [
                 'begin execute immediate \'drop table "test_foreign_table_two"\'; exception when others then if sqlcode != -942 then raise; end if; end;',
-                'begin execute immediate \'drop sequence "test_foreign_table_two_seq"\'; exception when others then if sqlcode != -2289 then raise; end if; end;',
               ]);
               tester('mssql', [
                 "if object_id('[test_foreign_table_two]', 'U') is not null DROP TABLE [test_foreign_table_two]",
@@ -344,16 +343,30 @@ module.exports = function(knex) {
               'create unique index `test_table_one_email_unique` on `test_table_one` (`email`)',
               'create index `test_table_one_logins_index` on `test_table_one` (`logins`)',
             ]);
-            tester('oracledb', [
-              `create table "test_table_one" ("id" number(20, 0) not null primary key, "first_name" varchar2(255), "last_name" varchar2(255), "email" varchar2(255) null, "logins" integer default '1', "balance" float default '0', "about" varchar2(4000), "created_at" timestamp with local time zone, "updated_at" timestamp with local time zone)`,
-              'comment on table "test_table_one" is \'A table comment.\'',
-              `DECLARE PK_NAME VARCHAR(200); BEGIN  EXECUTE IMMEDIATE ('CREATE SEQUENCE "test_table_one_seq"');  SELECT cols.column_name INTO PK_NAME  FROM all_constraints cons, all_cons_columns cols  WHERE cons.constraint_type = 'P'  AND cons.constraint_name = cols.constraint_name  AND cons.owner = cols.owner  AND cols.table_name = 'test_table_one';  execute immediate ('create or replace trigger "test_table_one_autoinc_trg"  BEFORE INSERT on "test_table_one"  for each row  declare  checking number := 1;  begin    if (:new."' || PK_NAME || '" is null) then      while checking >= 1 loop        select "test_table_one_seq".nextval into :new."' || PK_NAME || '" from dual;        select count("' || PK_NAME || '") into checking from "test_table_one"        where "' || PK_NAME || '" = :new."' || PK_NAME || '";      end loop;    end if;  end;'); END;`,
-              'comment on column "test_table_one"."logins" is \'\'',
-              'comment on column "test_table_one"."about" is \'A comment.\'',
-              'create index "NkZo/dGRI9O73/NE2fHo+35d4jk" on "test_table_one" ("first_name")',
-              'alter table "test_table_one" add constraint "test_table_one_email_unique" unique ("email")',
-              'create index "test_table_one_logins_index" on "test_table_one" ("logins")',
-            ]);
+
+            if (supportsIdentityColumn(knex.client)) {
+              tester('oracledb', [
+                `create table "test_table_one" ("id" number(20, 0) generated always as identity(start with 1 increment by 1) not null primary key, "first_name" varchar2(255), "last_name" varchar2(255), "email" varchar2(255) null, "logins" integer default '1', "balance" float default '0', "about" varchar2(4000), "created_at" timestamp with local time zone, "updated_at" timestamp with local time zone)`,
+                'comment on table "test_table_one" is \'A table comment.\'',
+                'comment on column "test_table_one"."logins" is \'\'',
+                'comment on column "test_table_one"."about" is \'A comment.\'',
+                'create index "NkZo/dGRI9O73/NE2fHo+35d4jk" on "test_table_one" ("first_name")',
+                'alter table "test_table_one" add constraint "test_table_one_email_unique" unique ("email")',
+                'create index "test_table_one_logins_index" on "test_table_one" ("logins")',
+              ]);
+            } else {
+              tester('oracledb', [
+                `create table "test_table_one" ("id" number(20, 0) not null primary key, "first_name" varchar2(255), "last_name" varchar2(255), "email" varchar2(255) null, "logins" integer default '1', "balance" float default '0', "about" varchar2(4000), "created_at" timestamp with local time zone, "updated_at" timestamp with local time zone)`,
+                'comment on table "test_table_one" is \'A table comment.\'',
+                `DECLARE PK_NAME VARCHAR(200); BEGIN  EXECUTE IMMEDIATE ('CREATE SEQUENCE "test_table_one_seq"');  SELECT cols.column_name INTO PK_NAME  FROM all_constraints cons, all_cons_columns cols  WHERE cons.constraint_type = 'P'  AND cons.constraint_name = cols.constraint_name  AND cons.owner = cols.owner  AND cols.table_name = 'test_table_one';  execute immediate ('create or replace trigger "test_table_one_autoinc_trg"  BEFORE INSERT on "test_table_one"  for each row  declare  checking number := 1;  begin    if (:new."' || PK_NAME || '" is null) then      while checking >= 1 loop        select "test_table_one_seq".nextval into :new."' || PK_NAME || '" from dual;        select count("' || PK_NAME || '") into checking from "test_table_one"        where "' || PK_NAME || '" = :new."' || PK_NAME || '";      end loop;    end if;  end;'); END;`,
+                'comment on column "test_table_one"."logins" is \'\'',
+                'comment on column "test_table_one"."about" is \'A comment.\'',
+                'create index "NkZo/dGRI9O73/NE2fHo+35d4jk" on "test_table_one" ("first_name")',
+                'alter table "test_table_one" add constraint "test_table_one_email_unique" unique ("email")',
+                'create index "test_table_one_logins_index" on "test_table_one" ("logins")',
+              ]);
+            }
+
             tester('mssql', [
               "CREATE TABLE [test_table_one] ([id] bigint identity(1,1) not null primary key, [first_name] nvarchar(255), [last_name] nvarchar(255), [email] nvarchar(255) null, [logins] int default '1', [balance] float default '0', [about] nvarchar(max), [created_at] datetime2, [updated_at] datetime2)",
               'CREATE INDEX [test_table_one_first_name_index] ON [test_table_one] ([first_name])',
@@ -495,13 +508,24 @@ module.exports = function(knex) {
                 'constraint `fk_fkey_three` foreign key(`fkey_three`) references `test_table_two`(`id`), ' +
                 'constraint `fk_fkey_four` foreign key(`fkey_four`) references `test_table_two`(`id`))',
             ]);
-            tester('oracledb', [
-              'create table "test_foreign_table_two" ("id" integer not null primary key, "fkey_two" integer, "fkey_three" integer, "fkey_four" integer)',
-              'DECLARE PK_NAME VARCHAR(200); BEGIN  EXECUTE IMMEDIATE (\'CREATE SEQUENCE "test_foreign_table_two_seq"\');  SELECT cols.column_name INTO PK_NAME  FROM all_constraints cons, all_cons_columns cols  WHERE cons.constraint_type = \'P\'  AND cons.constraint_name = cols.constraint_name  AND cons.owner = cols.owner  AND cols.table_name = \'test_foreign_table_two\';  execute immediate (\'create or replace trigger "m6uvAnbUQqcHvfWTN5IAjip1/vk"  BEFORE INSERT on "test_foreign_table_two"  for each row  declare  checking number := 1;  begin    if (:new."\' || PK_NAME || \'" is null) then      while checking >= 1 loop        select "test_foreign_table_two_seq".nextval into :new."\' || PK_NAME || \'" from dual;        select count("\' || PK_NAME || \'") into checking from "test_foreign_table_two"        where "\' || PK_NAME || \'" = :new."\' || PK_NAME || \'";      end loop;    end if;  end;\'); END;',
-              'alter table "test_foreign_table_two" add constraint "q7TfvbIx3HUQbh+l+e5N+J+Guag" foreign key ("fkey_two") references "test_table_two" ("id")',
-              'alter table "test_foreign_table_two" add constraint "fk_fkey_three" foreign key ("fkey_three") references "test_table_two" ("id")',
-              'alter table "test_foreign_table_two" add constraint "fk_fkey_four" foreign key ("fkey_four") references "test_table_two" ("id")',
-            ]);
+
+            if (supportsIdentityColumn(knex.client)) {
+              tester('oracledb', [
+                'create table "test_foreign_table_two" ("id" integer generated always as identity(start with 1 increment by 1) not null primary key, "fkey_two" integer, "fkey_three" integer, "fkey_four" integer)',
+                'alter table "test_foreign_table_two" add constraint "q7TfvbIx3HUQbh+l+e5N+J+Guag" foreign key ("fkey_two") references "test_table_two" ("id")',
+                'alter table "test_foreign_table_two" add constraint "fk_fkey_three" foreign key ("fkey_three") references "test_table_two" ("id")',
+                'alter table "test_foreign_table_two" add constraint "fk_fkey_four" foreign key ("fkey_four") references "test_table_two" ("id")',
+              ]);
+            } else {
+              tester('oracledb', [
+                'create table "test_foreign_table_two" ("id" integer not null primary key, "fkey_two" integer, "fkey_three" integer, "fkey_four" integer)',
+                'DECLARE PK_NAME VARCHAR(200); BEGIN  EXECUTE IMMEDIATE (\'CREATE SEQUENCE "test_foreign_table_two_seq"\');  SELECT cols.column_name INTO PK_NAME  FROM all_constraints cons, all_cons_columns cols  WHERE cons.constraint_type = \'P\'  AND cons.constraint_name = cols.constraint_name  AND cons.owner = cols.owner  AND cols.table_name = \'test_foreign_table_two\';  execute immediate (\'create or replace trigger "m6uvAnbUQqcHvfWTN5IAjip1/vk"  BEFORE INSERT on "test_foreign_table_two"  for each row  declare  checking number := 1;  begin    if (:new."\' || PK_NAME || \'" is null) then      while checking >= 1 loop        select "test_foreign_table_two_seq".nextval into :new."\' || PK_NAME || \'" from dual;        select count("\' || PK_NAME || \'") into checking from "test_foreign_table_two"        where "\' || PK_NAME || \'" = :new."\' || PK_NAME || \'";      end loop;    end if;  end;\'); END;',
+                'alter table "test_foreign_table_two" add constraint "q7TfvbIx3HUQbh+l+e5N+J+Guag" foreign key ("fkey_two") references "test_table_two" ("id")',
+                'alter table "test_foreign_table_two" add constraint "fk_fkey_three" foreign key ("fkey_three") references "test_table_two" ("id")',
+                'alter table "test_foreign_table_two" add constraint "fk_fkey_four" foreign key ("fkey_four") references "test_table_two" ("id")',
+              ]);
+            }
+
             tester('mssql', [
               'CREATE TABLE [test_foreign_table_two] ([id] int identity(1,1) not null primary key, [fkey_two] int, [fkey_three] int, [fkey_four] int, ' +
                 'CONSTRAINT [test_foreign_table_two_fkey_two_foreign] FOREIGN KEY ([fkey_two]) REFERENCES [test_table_two] ([id]), ' +
@@ -623,10 +647,18 @@ module.exports = function(knex) {
             tester('sqlite3', [
               'create table `charset_collate_test` (`id` integer not null primary key autoincrement, `account_id` integer, `details` text, `status` tinyint)',
             ]);
-            tester('oracledb', [
-              'create table "charset_collate_test" ("id" integer not null primary key, "account_id" integer, "details" clob, "status" smallint)',
-              'DECLARE PK_NAME VARCHAR(200); BEGIN  EXECUTE IMMEDIATE (\'CREATE SEQUENCE "charset_collate_test_seq"\');  SELECT cols.column_name INTO PK_NAME  FROM all_constraints cons, all_cons_columns cols  WHERE cons.constraint_type = \'P\'  AND cons.constraint_name = cols.constraint_name  AND cons.owner = cols.owner  AND cols.table_name = \'charset_collate_test\';  execute immediate (\'create or replace trigger "x9C3VzXH9urIKnTjm32JM7OvYYQ"  BEFORE INSERT on "charset_collate_test"  for each row  declare  checking number := 1;  begin    if (:new."\' || PK_NAME || \'" is null) then      while checking >= 1 loop        select "charset_collate_test_seq".nextval into :new."\' || PK_NAME || \'" from dual;        select count("\' || PK_NAME || \'") into checking from "charset_collate_test"        where "\' || PK_NAME || \'" = :new."\' || PK_NAME || \'";      end loop;    end if;  end;\'); END;',
-            ]);
+
+            if (supportsIdentityColumn(knex.client)) {
+              tester('oracledb', [
+                'create table "charset_collate_test" ("id" integer generated always as identity(start with 1 increment by 1) not null primary key, "account_id" integer, "details" clob, "status" smallint)',
+              ]);
+            } else {
+              tester('oracledb', [
+                'create table "charset_collate_test" ("id" integer not null primary key, "account_id" integer, "details" clob, "status" smallint)',
+                'DECLARE PK_NAME VARCHAR(200); BEGIN  EXECUTE IMMEDIATE (\'CREATE SEQUENCE "charset_collate_test_seq"\');  SELECT cols.column_name INTO PK_NAME  FROM all_constraints cons, all_cons_columns cols  WHERE cons.constraint_type = \'P\'  AND cons.constraint_name = cols.constraint_name  AND cons.owner = cols.owner  AND cols.table_name = \'charset_collate_test\';  execute immediate (\'create or replace trigger "x9C3VzXH9urIKnTjm32JM7OvYYQ"  BEFORE INSERT on "charset_collate_test"  for each row  declare  checking number := 1;  begin    if (:new."\' || PK_NAME || \'" is null) then      while checking >= 1 loop        select "charset_collate_test_seq".nextval into :new."\' || PK_NAME || \'" from dual;        select count("\' || PK_NAME || \'") into checking from "charset_collate_test"        where "\' || PK_NAME || \'" = :new."\' || PK_NAME || \'";      end loop;    end if;  end;\'); END;',
+              ]);
+            }
+
             tester('mssql', [
               'CREATE TABLE [charset_collate_test] ([id] int identity(1,1) not null primary key, [account_id] int, [details] nvarchar(max), [status] tinyint)',
             ]);
@@ -703,14 +735,25 @@ module.exports = function(knex) {
               'create unique index `10_test_table_email_unique` on `10_test_table` (`email`)',
               'create index `10_test_table_logins_index` on `10_test_table` (`logins`)',
             ]);
-            tester('oracledb', [
-              'create table "10_test_table" ("id" number(20, 0) not null primary key, "first_name" varchar2(255), "last_name" varchar2(255), "email" varchar2(255) null, "logins" integer default \'1\')',
-              'DECLARE PK_NAME VARCHAR(200); BEGIN  EXECUTE IMMEDIATE (\'CREATE SEQUENCE "10_test_table_seq"\');  SELECT cols.column_name INTO PK_NAME  FROM all_constraints cons, all_cons_columns cols  WHERE cons.constraint_type = \'P\'  AND cons.constraint_name = cols.constraint_name  AND cons.owner = cols.owner  AND cols.table_name = \'10_test_table\';  execute immediate (\'create or replace trigger "10_test_table_autoinc_trg"  BEFORE INSERT on "10_test_table"  for each row  declare  checking number := 1;  begin    if (:new."\' || PK_NAME || \'" is null) then      while checking >= 1 loop        select "10_test_table_seq".nextval into :new."\' || PK_NAME || \'" from dual;        select count("\' || PK_NAME || \'") into checking from "10_test_table"        where "\' || PK_NAME || \'" = :new."\' || PK_NAME || \'";      end loop;    end if;  end;\'); END;',
-              'comment on column "10_test_table"."logins" is \'\'',
-              'create index "10_test_table_first_name_index" on "10_test_table" ("first_name")',
-              'alter table "10_test_table" add constraint "10_test_table_email_unique" unique ("email")',
-              'create index "10_test_table_logins_index" on "10_test_table" ("logins")',
-            ]);
+
+            if (supportsIdentityColumn(knex.client)) {
+              tester('oracledb', [
+                'create table "10_test_table" ("id" number(20, 0) generated always as identity(start with 1 increment by 1) not null primary key, "first_name" varchar2(255), "last_name" varchar2(255), "email" varchar2(255) null, "logins" integer default \'1\')',
+                'comment on column "10_test_table"."logins" is \'\'',
+                'create index "10_test_table_first_name_index" on "10_test_table" ("first_name")',
+                'alter table "10_test_table" add constraint "10_test_table_email_unique" unique ("email")',
+                'create index "10_test_table_logins_index" on "10_test_table" ("logins")',
+              ]);
+            } else {
+              tester('oracledb', [
+                'create table "10_test_table" ("id" number(20, 0) not null primary key, "first_name" varchar2(255), "last_name" varchar2(255), "email" varchar2(255) null, "logins" integer default \'1\')',
+                'DECLARE PK_NAME VARCHAR(200); BEGIN  EXECUTE IMMEDIATE (\'CREATE SEQUENCE "10_test_table_seq"\');  SELECT cols.column_name INTO PK_NAME  FROM all_constraints cons, all_cons_columns cols  WHERE cons.constraint_type = \'P\'  AND cons.constraint_name = cols.constraint_name  AND cons.owner = cols.owner  AND cols.table_name = \'10_test_table\';  execute immediate (\'create or replace trigger "10_test_table_autoinc_trg"  BEFORE INSERT on "10_test_table"  for each row  declare  checking number := 1;  begin    if (:new."\' || PK_NAME || \'" is null) then      while checking >= 1 loop        select "10_test_table_seq".nextval into :new."\' || PK_NAME || \'" from dual;        select count("\' || PK_NAME || \'") into checking from "10_test_table"        where "\' || PK_NAME || \'" = :new."\' || PK_NAME || \'";      end loop;    end if;  end;\'); END;',
+                'comment on column "10_test_table"."logins" is \'\'',
+                'create index "10_test_table_first_name_index" on "10_test_table" ("first_name")',
+                'alter table "10_test_table" add constraint "10_test_table_email_unique" unique ("email")',
+                'create index "10_test_table_logins_index" on "10_test_table" ("logins")',
+              ]);
+            }
           });
       });
     });
@@ -1639,3 +1682,7 @@ module.exports = function(knex) {
     });
   });
 };
+
+function supportsIdentityColumn(client) {
+  return client.version && parseFloat(client.version) > 12.1;
+}

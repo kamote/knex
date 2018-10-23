@@ -3,6 +3,7 @@ import inherits from 'inherits';
 import Raw from '../../../raw';
 import ColumnCompiler from '../../../schema/columncompiler';
 import Trigger from './trigger';
+import * as utils from '../utils';
 
 // Column Compiler
 // -------
@@ -28,11 +29,19 @@ assign(ColumnCompiler_Oracle.prototype, {
   },
 
   increments() {
+    if (utils.supportsIdentityColumn(this.client)) {
+      return 'integer generated always as identity(start with 1 increment by 1) not null primary key';
+    }
+
     this._createAutoIncrementTriggerAndSequence();
     return 'integer not null primary key';
   },
 
   bigincrements() {
+    if (utils.supportsIdentityColumn(this.client)) {
+      return 'number(20, 0) generated always as identity(start with 1 increment by 1) not null primary key';
+    }
+
     this._createAutoIncrementTriggerAndSequence();
     return 'number(20, 0) not null primary key';
   },
