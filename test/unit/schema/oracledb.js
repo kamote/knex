@@ -907,10 +907,10 @@ describe('OracleDb SchemaBuilder', function() {
         })
         .toSQL();
 
-      expect(spy.callCount).to.equal(3);
+      expect(spy.callCount).to.equal(6);
       expect(spy.firstCall.args).to.deep.equal(['id', 'table context']);
-      expect(spy.secondCall.args).to.deep.equal(['email', 'table context']);
-      expect(spy.thirdCall.args).to.deep.equal(['users', 'table context']);
+      expect(spy.args[4]).to.deep.equal(['email', 'table context']);
+      expect(spy.args[5]).to.deep.equal(['users', 'table context']);
     });
 
     it('TableCompiler passes queryContext to wrapIdentifier', function() {
@@ -922,10 +922,10 @@ describe('OracleDb SchemaBuilder', function() {
         })
         .toSQL();
 
-      expect(spy.callCount).to.equal(3);
+      expect(spy.callCount).to.equal(6);
       expect(spy.firstCall.args).to.deep.equal(['id', 'id context']);
-      expect(spy.secondCall.args).to.deep.equal(['email', 'email context']);
-      expect(spy.thirdCall.args).to.deep.equal(['users', undefined]);
+      expect(spy.args[4]).to.deep.equal(['email', 'email context']);
+      expect(spy.args[5]).to.deep.equal(['users', undefined]);
     });
 
     it('TableCompiler allows overwriting queryContext from SchemaCompiler', function() {
@@ -939,10 +939,10 @@ describe('OracleDb SchemaBuilder', function() {
         })
         .toSQL();
 
-      expect(spy.callCount).to.equal(3);
+      expect(spy.callCount).to.equal(6);
       expect(spy.firstCall.args).to.deep.equal(['id', 'table context']);
-      expect(spy.secondCall.args).to.deep.equal(['email', 'table context']);
-      expect(spy.thirdCall.args).to.deep.equal(['users', 'table context']);
+      expect(spy.args[4]).to.deep.equal(['email', 'table context']);
+      expect(spy.args[5]).to.deep.equal(['users', 'table context']);
     });
 
     it('ColumnCompiler allows overwriting queryContext from TableCompiler', function() {
@@ -956,10 +956,10 @@ describe('OracleDb SchemaBuilder', function() {
         })
         .toSQL();
 
-      expect(spy.callCount).to.equal(3);
+      expect(spy.callCount).to.equal(6);
       expect(spy.firstCall.args).to.deep.equal(['id', 'id context']);
-      expect(spy.secondCall.args).to.deep.equal(['email', 'email context']);
-      expect(spy.thirdCall.args).to.deep.equal(['users', 'table context']);
+      expect(spy.args[4]).to.deep.equal(['email', 'email context']);
+      expect(spy.args[5]).to.deep.equal(['users', 'table context']);
     });
   });
 });
